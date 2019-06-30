@@ -40,9 +40,6 @@ public interface ISecureFileContainer<E extends SecureFile > {
      *      - Il proprietario u di un dato d ha accesso in lettura e scrittura a d:
      *        For all d di D. Owner(d) = u => Access(u,d) = w
      *
-     *      - Il proprietario u di un dato d ha accesso in lettura e scrittura a d:
-     *        For all d di D. Owner(d) = u => Access(u,d) = w
-     *
      *
      */
 
