@@ -1,10 +1,5 @@
 import java.io.Serializable;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 
 public class SecureFile implements Serializable{
     /*
@@ -36,6 +31,7 @@ public class SecureFile implements Serializable{
     SecureFile(SecureFile p_sFile) throws NullPointerException, IllegalArgumentException{
         this(p_sFile.getFilePath());
     }
+
     /*
     Modifica filePath
     @requires p_filePath != null && !p_filePath.isEmpty()
