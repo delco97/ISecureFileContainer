@@ -32,8 +32,8 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
      *         Dati u di U, d di D Owner(d) = u ha il seguente significato:
      *         Il proprietario di d è l'utente u
      *
-     *      Access: U * D -> A
-     *         E' una funzione totale che associa ad ogni coppia (u,d) di U * D un elemento di A.
+     *      Access: D * U -> A
+     *         E' una funzione totale che associa ad ogni coppia (u,d) di D * U un elemento di A.
      *         Dati u di U, d di D, a di A Access(u,d) = a ha il seguente significato:
      *         L'utente u ha un livello di accesso pari ad a nei confronti del dato d.
      *
@@ -90,13 +90,13 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
     Ottiene una copia del file nella collezione
     se vengono rispettati i controlli di identità
     @requires Owner != null && passw != null && !Owner.isEmpty() && !passw.isEmpty() && file != null &&
-              (Exist (u,d) appartenente a (U * D) tale che u.id = Id && u.password = passw &&
+              (Exist (u,d) appartenente a (D * U) tale che u.id = Id && u.password = passw &&
               (Access((u,d)) = w || Access((u,d)) = r) )
     @throws NullPointerException se Id = null || passw = null || file = null
     @throws IllegalArgumentException se Owner.isEmpty() || passw.isEmpty()
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Id && u.password = passw)
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Owner && u.password = passw) &&
-                                 Not (Exist (u,d) appartenente a (U * D) tale che u.id = Id && u.password = passw &&
+                                 Not (Exist (u,d) appartenente a (D * U) tale che u.id = Id && u.password = passw &&
                                       (Access((u,d)) = w || Access((u,d)) = r) )
     @return restituisce una copia del file
     */
