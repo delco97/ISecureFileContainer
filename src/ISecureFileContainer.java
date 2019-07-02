@@ -55,7 +55,8 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
     @modifies this
     @effects u = {Id,passw} && this_post.U = this_pre.U + u
     */
-    void createUser(String Id, String passw);
+    void createUser(String Id, String passw) throws NullPointerException, IllegalArgumentException,
+                                                    DuplicatedUserException;
 
     /*
     Restituisce il numero dei file di un utente presenti nella
@@ -67,7 +68,7 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Owner && u.password = passw)
     @return Dato u = {Owner,passw} restituisce |OwnedData(u)|
      */
-    int getSize(String Owner, String passw);
+    int getSize(String Owner, String passw) throws NullPointerException, IllegalArgumentException, CredentialException;
 
     /*
     Inserisce il file nella collezione
@@ -82,7 +83,8 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
              OwnedData(u); altrimenti file non viene inserito
     @return Dato u = {Id,passw} restituisce true se file viene inserito in OwnedData(u), false altrimenti.
     */
-    boolean put(String Owner, String passw, E file);
+    boolean put(String Owner, String passw, E file) throws NullPointerException, IllegalArgumentException,
+                                                           CredentialException;
 
     /*
     Ottiene una copia del file nella collezione
@@ -98,7 +100,8 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
                                       (Access((u,d)) = w || Access((u,d)) = r) )
     @return restituisce una copia del file
     */
-    E get(String Owner, String passw, E file);
+    E get(String Owner, String passw, E file) throws NullPointerException, IllegalArgumentException,
+                                                     CredentialException, NoAccessException;
 
     /*
     Rimuove il file nella collezione
@@ -114,7 +117,8 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
     @effects this_post.D = this_pre.D - file
     @return restituisce una copia di file prima di rimuoverlo da D
      */
-    E remove(String Owner, String passw, E file);
+    E remove(String Owner, String passw, E file) throws NullPointerException, IllegalArgumentException,
+                                                        CredentialException, NoAccessException;
 
     /*
     Crea una copia del file nella collezione
@@ -129,7 +133,8 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
     @modifies this
     @effects effettua una copia di file
      */
-    void copy(String Owner, String passw, E file);
+    void copy(String Owner, String passw, E file) throws NullPointerException, IllegalArgumentException,
+                                                         CredentialException, NoAccessException;
 
     /*
     Condivide in lettura il file nella collezione con un altro utente
@@ -147,7 +152,9 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
     @modifies this
     @effects u= {Other, passw}, Access(u,file) = r
      */
-    void shareR(String Owner, String passw, String Other, E file);
+    void shareR(String Owner, String passw, String Other, E file) throws NullPointerException, IllegalArgumentException,
+                                                                         CredentialException, UnknownUserException,
+                                                                         NoAccessException;
 
     /*
     Condivide in lettura e scrittura il file nella collezione con un altro utente
@@ -165,7 +172,9 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
     @modifies this
     @effects u= {Other, passw}, Access(u,file) = w
      */
-    void shareW(String Owner, String passw, String Other, E file);
+    void shareW(String Owner, String passw, String Other, E file) throws NullPointerException, IllegalArgumentException,
+                                                                         CredentialException, UnknownUserException,
+                                                                         NoAccessException;
 
     /*
     Restituisce un iteratore (senza remove) che genera tutti i file
@@ -178,7 +187,8 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Owner && u.password = passw)
     @return Restituisce un iteratore (senza remove) che genera tutti i file dell’utente in ordine arbitrario
     */
-    Iterator<E> getIterator(String Owner, String passw);
+    Iterator<E> getIterator(String Owner, String passw) throws NullPointerException, IllegalArgumentException,
+                                                               CredentialException;
 
     // ****** ...altre operazione da definire a scelta *******
 
@@ -193,7 +203,7 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
      @effects u = {Id,passw} && this_post.U = this_pre.U - u &&
               this_post.D = this_pre.D - OwnedData(u)
      */
-    void removeUser(String Id, String passw) throws NullPointerException, CredentialException;
+    void removeUser(String Id, String passw) throws NullPointerException, IllegalArgumentException, CredentialException;
 
     /*
     Memorizza file nel file relativo
@@ -207,7 +217,8 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
     @modifies this, file
     @effects scrivi contenuto di file nel file associato
      */
-    void storeFile(String Id, String passw, E file);
+    void storeFile(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException,
+                                                           CredentialException, NoAccessException;
 
     /*
     Leggi file dal file relativo
@@ -221,5 +232,6 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
     @modifies this, file
     @effects recupera contenuto di file da file associato
     */
-    void readFile(String Id, String passw, E file);
+    void readFile(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException,
+                                                          CredentialException, NoAccessException;
 }
