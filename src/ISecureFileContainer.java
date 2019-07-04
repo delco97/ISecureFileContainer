@@ -1,4 +1,5 @@
 import javax.security.auth.login.CredentialException;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Iterator;
 
@@ -92,7 +93,7 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
     @requires Owner != null && passw != null && !Owner.isEmpty() && !passw.isEmpty() && file != null &&
               (Exist (u,d) appartenente a (D * U) tale che u.id = Id && u.password = passw &&
               (Access((u,d)) = w || Access((u,d)) = r) )
-    @throws NullPointerException se Id = null || passw = null || file = null
+    @throws NullPointerException se Id = null || passw = null || file = null || file non in D
     @throws IllegalArgumentException se Owner.isEmpty() || passw.isEmpty()
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Id && u.password = passw)
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Owner && u.password = passw) &&
@@ -124,16 +125,17 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
     Crea una copia del file nella collezione
     se vengono rispettati i controlli di identità
     @requires Owner != null && passw != null && !Owner.isEmpty() && !passw.isEmpty() && file != null &&
+              Not (Exist d in D. d.path = newFilePath) &&
               (Exist u appartenente a U tale che u.id = Owner && u.password = passw && OwnedData(u) contiene file)
     @throws NullPointerException se Owner = null || passw = null || file = null
-    @throws IllegalArgumentException se Owner.isEmpty() || passw.isEmpty()
+    @throws IllegalArgumentException se Owner.isEmpty() || passw.isEmpty() || Exist d in D. d.path = newFilePath
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Owner && u.password = passw)
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Owner && u.password = passw) &&
             Not (Exist u appartenente a U tale che u.id = Owner && u.password = passw && OwnedData(u) contiene file)
     @modifies this
     @effects effettua una copia di file
      */
-    void copy(String Owner, String passw, E file) throws NullPointerException, IllegalArgumentException,
+    void copy(String Owner, String passw, E file, String newFilePath) throws NullPointerException, IllegalArgumentException,
                                                          CredentialException, NoAccessException;
 
     /*
@@ -214,11 +216,12 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Id && u.password = passw)
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Id && u.password = passw) &&
             Not (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && d = file && Access(u,d) = w)
+    @throws IOException se si verifica un problema durante la scrittura su file
     @modifies this, file
     @effects scrivi contenuto di file nel file associato
      */
     void storeFile(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException,
-                                                           CredentialException, NoAccessException;
+                                                           CredentialException, NoAccessException, IOException;
 
     /*
     Leggi file dal file relativo
@@ -229,9 +232,10 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Id && u.password = passw)
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Id && u.password = passw) &&
             Not (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && d = file && Access(u,d) = w)
+    @throws IOException se si verifica un problema durante la scrittura su file
     @modifies this, file
     @effects recupera contenuto di file da file associato
     */
     void readFile(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException,
-                                                          CredentialException, NoAccessException;
+            CredentialException, NoAccessException, IOException, ClassNotFoundException;
 }

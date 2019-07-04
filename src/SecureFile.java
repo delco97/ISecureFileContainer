@@ -38,7 +38,7 @@ public class SecureFile implements Serializable{
     @throws NullPointerException se p_filePath == null
     @throws IllegalArgumentException se p_filePath.isEmpty()
      */
-    public void setFilePath(String p_filePath)throws NullPointerException, IllegalArgumentException{
+    private void setFilePath(String p_filePath)throws NullPointerException, IllegalArgumentException{
         if(p_filePath == null) throw new NullPointerException("p_filePath must be != null !");
         if(p_filePath.isEmpty()) throw new IllegalArgumentException("p_filePath can't be an empty string!");
         //TODO: Check if p_filePath is a valid file path
@@ -52,7 +52,9 @@ public class SecureFile implements Serializable{
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null ) return false;
+        if(o instanceof String) return filePath.equals(o);
+        if(getClass() != o.getClass()) return false;
         SecureFile that = (SecureFile) o;
         return filePath.equals(that.filePath);
     }
