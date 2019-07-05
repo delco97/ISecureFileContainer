@@ -2,14 +2,13 @@ import javax.security.auth.login.CredentialException;
 import java.io.*;
 import java.util.*;
 
-public class MapSecureDataContainer<E extends SecureFile> extends SecureFile implements ISecureFileContainer<E>{
+public class MapSecureDataContainer<E extends SecureFile> implements ISecureFileContainer<E>{
     /*
      AF(c):
         U = c.users
         D = c.dataSet
         A = c.AccessLevel
-        
-        
+
         Owner = c.owners
         Access = c.accesses
      
@@ -20,27 +19,19 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
         For all map. map in accesses.values => map.keySet sottoinsieme di users
      */
 
-    //private Set<User> users;
-    //private Set<E> dataSet;
-    //private Map<E,User> owners;
+    //Implementazioni alternative
+    //private Map<E,User> owner;
+    //private Map<User,Map<E,AccessLevel>> access;
 
-    private Set<User> users;
-    private Set<E> dataSet;
-    private Map<E,User> owners;
-    private Map<E,Map<User,AccessLevel>> accesses;
+    private Set<User> users; //Utenti presenti nel container
+    private Set<E> dataSet;  //Dati presenti nel container
+    private Map<E,User> owners; //Proprietario associato a ciascun dato presente nel container
+    private Map<E,Map<User,AccessLevel>> accesses; //Livello di accesso ad ogni dato presente nel container asseganto a ogni utente nel container
 
-
-    MapSecureDataContainer(String p_filePath) throws NullPointerException, IllegalArgumentException {
-        super(p_filePath);
-        users = new HashSet<>();
-        dataSet = new HashSet<>();
-        owners = new HashMap<>();
-        accesses = new HashMap<>();
-    }
-
-
-    MapSecureDataContainer(SecureFile p_sFile) throws NullPointerException, IllegalArgumentException {
-        super(p_sFile);
+    /*
+    Inizializza container vuoto
+     */
+    MapSecureDataContainer() {
         users = new HashSet<>();
         dataSet = new HashSet<>();
         owners = new HashMap<>();
@@ -106,13 +97,15 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
         assert repInv();
 
         if(!userAuth(Id,passw)) throw new CredentialException("valid users' credentials are required !");
-
+        //credenziali valide
         assert users.remove(Id); //rimuovo utente da insime degli utenti presenti
-        //L'insieme dei dati che prima appartenevano all'utente u con u.id = Id devono essere rimossi
+        //L'insieme dei dati che prima appartenevano all'utente u con u.id = Id devono essere rimossi da
+        // dataSet, owners e accesses
+
         Iterator<Map.Entry<E,User>> iterOwners = owners.entrySet().iterator();
         while (iterOwners.hasNext()) {
             Map.Entry<E,User> entry = iterOwners.next();
-            if(entry.getValue().equals(Id)){
+            if(entry.getValue().equals(Id)){//trovata coppia (e,u) dove u.id = Id
                 dataSet.remove(entry.getKey());
                 accesses.remove(entry.getKey());
                 iterOwners.remove();
@@ -172,7 +165,8 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
         if(file == null) throw new NullPointerException("file must be != null !");
 
         boolean added = dataSet.add(file);
-        if(added){ //verifica se file è stato aggiunto.
+        if(added){ //verifica se file è stato aggiunto in dataSet.
+            //file aggiuto in dataSet. Adesso deve essere aggiunto anche in owners e accesses
             User usr = new User(Owner,passw);
             Map<User,AccessLevel> mapAcc = new HashMap<>();
             mapAcc.put(usr,AccessLevel.W);
@@ -205,8 +199,7 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
         if(!userAuth(Owner,passw)) throw new CredentialException("valid users' credentials are required !");
         if(file == null) throw new NullPointerException("file must be != null !");
         if(!dataSet.contains(file)) throw new IllegalArgumentException("file must be inside data collection!");
-        AccessLevel lev = accesses.get(file).get(Owner);
-        if(lev == AccessLevel.U) throw new NoAccessException("user " + Owner + " has no access to file");
+        if(!accesses.get(file).containsKey(Owner)) throw new NoAccessException("user " + Owner + " has no access to file");
 
         Iterator<E> iterData = dataSet.iterator();
         E res = null;
@@ -242,22 +235,14 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
         if(!dataSet.contains(file)) throw new IllegalArgumentException("file must be inside data collection!");
         if(owners.get(file).equals(Owner)) throw new NoAccessException("user " + Owner + " must be the Owner to remove file!");
 
-        Iterator<E> iterData = dataSet.iterator();
-        E res = null;
-        while (iterData.hasNext()) {
-            res = iterData.next();
-            if(res.equals(file)) {
-                iterData.remove();
-                owners.remove(res);
-                accesses.remove(res);
-                break;
-            }
-        }
-
+        E res = getFile(file.getFilePath()); //recupero da dataSet elemento che sarà rimosso
+        dataSet.remove(file);
+        owners.remove(file);
+        accesses.remove(file);
         assert res != null;
-        assert repInv();
         return res;
     }
+
     /*
     Crea una copia del file nella collezione
     se vengono rispettati i controlli di identità
@@ -270,7 +255,7 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Owner && u.password = passw) &&
             Not (Exist u appartenente a U tale che u.id = Owner && u.password = passw && OwnedData(u) contiene file)
     @modifies this
-    @effects effettua una copia di file
+    @effects effettua una copia di file con nuovo file path
      */
     @Override
     public void copy(String Owner, String passw, E file, String newFilePath) throws NullPointerException, IllegalArgumentException, CredentialException, NoAccessException {
@@ -304,19 +289,7 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
      */
     @Override
     public void shareR(String Owner, String passw, String Other, E file) throws NullPointerException, IllegalArgumentException, CredentialException, UnknownUserException, NoAccessException {
-        assert repInv();
-        if(!userAuth(Owner,passw)) throw new CredentialException("valid users' credentials are required !");
-        if(Other == null) throw new NullPointerException("Other must be != null !");
-        if(Other.isEmpty()) throw new IllegalArgumentException("Other can't be empty!");
-        if(file == null) throw new NullPointerException("file must be != null !");
-        if(!dataSet.contains(file)) throw new IllegalArgumentException("file must be inside data collection!");
-        if(!owners.get(file).equals(Owner)) throw new NoAccessException("user " + Owner + " must be the Owner to share file!");
-        if(!users.contains(Other)) throw new UnknownUserException("you are trying to share a file with " + Other + " who is not inside the collection!");
-
-        User otherUser = getUser(Other);
-        accesses.get(file).put(otherUser,AccessLevel.R);
-
-        assert repInv();
+        setAccesses(Owner,passw,Other,file,AccessLevel.R);
     }
 
     /*
@@ -337,17 +310,38 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
      */
     @Override
     public void shareW(String Owner, String passw, String Other, E file) throws NullPointerException, IllegalArgumentException, CredentialException, UnknownUserException, NoAccessException {
+        setAccesses(Owner,passw,Other,file,AccessLevel.W);
+    }
+
+    /*
+    Assegna livello di accesso a file nella collezione ad un utente Other se le credenziali Owner e passw identificano
+    correttamente il proprietario di file.
+    @requires Owner != null && passw != null && Other!=null && !Owner.isEmpty() && !passw.isEmpty() && !Other.isEmpty()
+              && file != null && acc != null &&
+              (Exist u appartenente a U tale che u.id = Owner && u.password = passw && OwnedData(u) contiene file) &&
+              (Exist u appartenente a U tale che u.id = Other)
+    @throws NullPointerException se Owner = null || passw = null || Other = null || file = null
+    @throws IllegalArgumentException se Owner.isEmpty() || passw.isEmpty() || Other.isEmpty() || acc = null
+    @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Owner && u.password = passw)
+    @throws UnknownUserException Not (Exist u appartenente a U tale che u.id = Other)
+    @throws NoAccessException se (Exist u appartenente a U tale che u.id = Owner && u.password = passw) &&
+            Not (Exist u appartenente a U tale che u.id = Owner && u.password = passw && OwnedData(u) contiene file)
+    @modifies this
+    @effects u= {Other, passw}, Access(u,file) = w
+     */
+    private void setAccesses(String Owner, String passw, String Other, E file, AccessLevel acc) throws NullPointerException, IllegalArgumentException, CredentialException, UnknownUserException, NoAccessException{
         assert repInv();
         if(!userAuth(Owner,passw)) throw new CredentialException("valid users' credentials are required !");
         if(Other == null) throw new NullPointerException("Other must be != null !");
+        if(acc == null) throw new IllegalArgumentException("acc can't be null !");
         if(Other.isEmpty()) throw new IllegalArgumentException("Other can't be empty!");
         if(file == null) throw new NullPointerException("file must be != null !");
         if(!dataSet.contains(file)) throw new IllegalArgumentException("file must be inside data collection!");
         if(!owners.get(file).equals(Owner)) throw new NoAccessException("user " + Owner + " must be the Owner to share file!");
-        if(!users.contains(Other)) throw new UnknownUserException("you are trying to share a file with " + Other + " who is not inside the collection!");
+        if(!users.contains(Other)) throw new UnknownUserException("you are trying to share a file with unknown user: " + Other );
 
         User otherUser = getUser(Other);
-        accesses.get(file).put(otherUser,AccessLevel.W);
+        accesses.get(file).put(otherUser,acc);
 
         assert repInv();
     }
@@ -366,7 +360,7 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
     @Override
     public Iterator<E> getIterator(String Owner, String passw) throws NullPointerException, IllegalArgumentException, CredentialException {
         if(!userAuth(Owner,passw)) throw new CredentialException("valid users' credentials are required !");
-
+        //Recupero insieme dei dati posseduti da Owner
         Set<E> res = new HashSet<>();
         Iterator<Map.Entry<E,User>> iterOwners = owners.entrySet().iterator();
         while (iterOwners.hasNext()) {
@@ -375,12 +369,12 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
                 res.add(entry.getKey());
             }
         }
-
+        //Restituisco Iteratore senza remove di res
         return new NoRemoveIterator<E>(res.iterator());
     }
 
     /*
-    Memorizza file nel file relativo
+    Memorizza file nel documento su disco relativo
     @requires Id != null && passw != null && !Id.isEmpty() && !passw.isEmpty() && file != null &&
               (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && d = file && Access(u,d) = w)
     @throws NullPointerException se Id = null || passw = null || file = null
@@ -390,7 +384,7 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
             Not (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && d = file && Access(u,d) = w)
     @throws IOException se si verifica un problema durante la scrittura su file
     @modifies this, file
-    @effects scrivi contenuto di file nel file associato
+    @effects scrivi contenuto di file nel documento su disco relativo
      */
     @Override
     public void storeFile(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException, CredentialException, NoAccessException, IOException {
@@ -398,15 +392,17 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
         if(!userAuth(Id,passw)) throw new CredentialException("valid users' credentials are required !");
         if(file == null) throw new NullPointerException("file must be != null !");
         if(!dataSet.contains(file)) throw new IllegalArgumentException("file must be inside data collection!");
+        if(!accesses.get(file).containsKey(Id)) throw new NoAccessException("user " + Id + " has no access to file");
         if(accesses.get(file).get(Id) != AccessLevel.W) throw new NoAccessException("user " + Id + " must have write access to file!");
         // Serialization
 
-        //Salvo oggetto file nel file relativo
-        file = getFile(file.getFilePath());
-        FileOutputStream f = new FileOutputStream(file.getFilePath());
+        //Salvo oggetto file nel documento su disco relativo
+
+        E containerFile = getFile(file.getFilePath()); //recupero file da container
+        FileOutputStream f = new FileOutputStream(containerFile.getFilePath());
         ObjectOutputStream out = new ObjectOutputStream(f);
 
-        out.writeObject(file);
+        out.writeObject(containerFile); //memorizzo contenuto di containerFile su disco
 
         out.close();
         f.close();
@@ -415,7 +411,7 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
         assert repInv();
     }
     /*
-    Leggi file dal file relativo
+    Leggi file dal documento su disco relativo
     @requires Id != null && passw != null && !Id.isEmpty() && !passw.isEmpty() && file != null &&
               (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && d = file && Access(u,d) = w)
     @throws NullPointerException se Id = null || passw = null || file = null
@@ -425,7 +421,7 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
             Not (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && d = file && Access(u,d) = w)
     @throws IOException se si verifica un problema durante la scrittura su file
     @modifies this, file
-    @effects recupera contenuto di file da file associato
+    @effects recupera contenuto di file da documento su disco relativo
     */
     @Override
     public void readFile(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException, CredentialException, NoAccessException, IOException, ClassNotFoundException {
@@ -433,21 +429,22 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
         if(!userAuth(Id,passw)) throw new CredentialException("valid users' credentials are required !");
         if(file == null) throw new NullPointerException("file must be != null !");
         if(!dataSet.contains(file)) throw new IllegalArgumentException("file must be inside data collection!");
-        if(accesses.get(file).get(Id) == AccessLevel.U) throw new NoAccessException("user " + Id + " must have read access to file!");
+        if(!accesses.get(file).containsKey(Id)) throw new NoAccessException("user " + Id + " has no access to file");
+        if(accesses.get(file).get(Id) == AccessLevel.R) throw new NoAccessException("user " + Id + " must have read access to file!");
         // Deserialization
 
-        file = getFile(file.getFilePath());
         FileInputStream f = new FileInputStream(file.getFilePath());
         ObjectInputStream in = new ObjectInputStream(f);
 
-        file = (E) in.readObject();
-        dataSet.remove(file);
-        dataSet.add(file);
+        E newfile = (E) in.readObject();
+        //Rimuovo vecchio file da container e metto quello appena letto da documento
+        dataSet.remove(newfile);
+        dataSet.add(newfile);
 
         in.close();
         f.close();
 
-        System.out.println("Object has been serialized");
+        System.out.println("Object has been deserialized");
         assert repInv();
     }
 

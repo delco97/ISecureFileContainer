@@ -3,7 +3,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Iterator;
 
-public interface ISecureFileContainer<E extends SecureFile> extends Serializable {
+public interface ISecureFileContainer<E>  {
     /*
      * Overview:
      * ISecureFileContainer<E> è  un  contenitore  di oggetti  di  tipo  E.  Intuitivamente  la collezione  si  comporta
@@ -238,4 +238,22 @@ public interface ISecureFileContainer<E extends SecureFile> extends Serializable
     */
     void readFile(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException,
             CredentialException, NoAccessException, IOException, ClassNotFoundException;
+
+    /*
+    Verifica se esiste un utente u con u.id = id
+    @requires Id != null && !Id.isEmpty()
+    @throws NullPointerException se Id = null || passw = null
+    @throws IllegalArgumentException se Id.isEmpty()
+    @return true se esiste un utente u tale che u.id = Id; false altrimenti
+    */
+    boolean userExist(String Id) throws NullPointerException, IllegalArgumentException;
+
+    /*
+    Verifica se esiste un utente u con u.id = id e u.password = passw
+    @requires Id != null && passw != null && !Id.isEmpty() && !passw.isEmpty()
+    @throws NullPointerException se Id = null || passw = null
+    @throws IllegalArgumentException se Id.isEmpty() || passw.isEmpty()
+    @return true se esiste un utente u tale che u.id = Id && u.password = passw; false altrimenti
+    */
+    boolean userAuth(String Id, String passw) throws NullPointerException, IllegalArgumentException;
 }

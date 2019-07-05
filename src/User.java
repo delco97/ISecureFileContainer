@@ -49,8 +49,10 @@ public class User {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null) return false;
-        if(o instanceof String) return id.equals(o);
-        if(getClass() != o.getClass()) return false;
+        if(getClass() != o.getClass()) {
+            String aux = (String) o;
+            id.equals(aux);
+        }
         User user = (User) o;
         return id.equals(user.id);
     }
