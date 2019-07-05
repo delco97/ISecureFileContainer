@@ -10,7 +10,9 @@ public class SecureFile implements Serializable{
      *    - filePath: indirizzo del file nel quale viene memorizzato l'oggetto
      */
 
-    private static final long serialversionUID = 129348938L;
+    //Perché è opportuno definire serialversionUID ?
+    // -> https://stackoverflow.com/questions/285793/what-is-a-serialversionuid-and-why-should-i-use-it
+    private static final long serialversionUID = 20L;
     private String filePath;
 
     /*

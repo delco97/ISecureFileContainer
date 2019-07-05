@@ -2,7 +2,7 @@ import javax.security.auth.login.CredentialException;
 import java.io.*;
 import java.util.*;
 
-public class MapSecureDataContainer<E extends SecureFile> implements ISecureFileContainer<E>{
+public class MapSecureDataContainer<E extends SecureFile> implements ISecureFileContainer<E>, Serializable{
     /*
      AF(c):
         U = c.users
@@ -22,6 +22,10 @@ public class MapSecureDataContainer<E extends SecureFile> implements ISecureFile
     //Implementazioni alternative
     //private Map<E,User> owner;
     //private Map<User,Map<E,AccessLevel>> access;
+
+    //Perché è opportuno definire serialversionUID ?
+    // -> https://stackoverflow.com/questions/285793/what-is-a-serialversionuid-and-why-should-i-use-it
+    private static final long serialversionUID = 10L;
 
     private Set<User> users; //Utenti presenti nel container
     private Set<E> dataSet;  //Dati presenti nel container
