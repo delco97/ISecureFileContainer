@@ -1,6 +1,7 @@
+import java.io.Serializable;
 import java.util.Objects;
 
-public class User {
+public class User implements Serializable {
 
     /* Overview:
      * User è un tipo di dato che contiene le informazioni realtive ad un utente.
