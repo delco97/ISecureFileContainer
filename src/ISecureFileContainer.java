@@ -220,7 +220,7 @@ public interface ISecureFileContainer<E>  {
     @modifies this, file
     @effects scrivi contenuto di file nel file associato
      */
-    void storeFile(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException,
+    void writeFileOnDisk(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException,
                                                            CredentialException, NoAccessException, IOException;
 
     /*
@@ -236,7 +236,7 @@ public interface ISecureFileContainer<E>  {
     @modifies this, file
     @effects recupera contenuto di file da file associato
     */
-    void readFile(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException,
+    void readFileFromDisk(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException,
             CredentialException, NoAccessException, IOException, ClassNotFoundException;
 
     /*
