@@ -2,7 +2,7 @@ import javax.security.auth.login.CredentialException;
 import java.io.*;
 import java.util.*;
 
-public class MapSecureDataContainer<E extends SecureFile> implements ISecureFileContainer<E>, Serializable{
+public class MapSecureDataContainer<E extends SecureFile> extends SecureFile implements ISecureFileContainer<E> {
     /*
      AF(c):
         U = c.users
@@ -27,19 +27,25 @@ public class MapSecureDataContainer<E extends SecureFile> implements ISecureFile
     // -> https://stackoverflow.com/questions/285793/what-is-a-serialversionuid-and-why-should-i-use-it
     private static final long serialversionUID = 10L;
 
+    private User admin; //admin del container
     private Set<User> users; //Utenti presenti nel container
     private Set<E> dataSet;  //Dati presenti nel container
     private Map<E,User> owners; //Proprietario associato a ciascun dato presente nel container
     private Map<E,Map<User,AccessLevel>> accesses; //Livello di accesso ad ogni dato presente nel container asseganto a ogni utente nel container
 
     /*
-    Inizializza container vuoto
+    Inizializza container vuoto.
+    Path rappresenta il documento nel quale l'intero container può essere memorizzato
      */
-    MapSecureDataContainer() {
+    MapSecureDataContainer(String path) {
+        super(path);
         users = new HashSet<>();
         dataSet = new HashSet<>();
         owners = new HashMap<>();
         accesses = new HashMap<>();
+
+        admin = new User("Luca", "Diavolo!");
+        users.add(admin);
     }
 
     /*
@@ -49,8 +55,8 @@ public class MapSecureDataContainer<E extends SecureFile> implements ISecureFile
     private boolean repInv(){
         boolean ir;
         ir = users != null && dataSet != null && owners != null && accesses != null &&
-             owners.keySet().equals(dataSet) && accesses.keySet().equals(dataSet) &&
-             users.containsAll(owners.values());
+             owners.keySet().equals(dataSet) && accesses.keySet().equals(dataSet) && admin != null &&
+             users.contains(admin) && users.containsAll(owners.values());
         if(ir) {
             //For all map. map in accesses.values => map.keySet sottoinsieme di users
             for (Map<User, AccessLevel> map : accesses.values()) {
@@ -387,11 +393,11 @@ public class MapSecureDataContainer<E extends SecureFile> implements ISecureFile
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Id && u.password = passw) &&
             Not (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && d = file && Access(u,d) = w)
     @throws IOException se si verifica un problema durante la scrittura su file
-    @modifies this, file
+    @modifies this
     @effects scrivi contenuto di file nel documento su disco relativo
      */
     @Override
-    public void storeFile(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException, CredentialException, NoAccessException, IOException {
+    public void writeFileOnDisk(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException, CredentialException, NoAccessException, IOException {
         assert repInv();
         if(!userAuth(Id,passw)) throw new CredentialException("valid users' credentials are required !");
         if(file == null) throw new NullPointerException("file must be != null !");
@@ -424,11 +430,11 @@ public class MapSecureDataContainer<E extends SecureFile> implements ISecureFile
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Id && u.password = passw) &&
             Not (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && d = file && Access(u,d) = w)
     @throws IOException se si verifica un problema durante la scrittura su file
-    @modifies this, file
+    @modifies this
     @effects recupera contenuto di file da documento su disco relativo
     */
     @Override
-    public void readFile(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException, CredentialException, NoAccessException, IOException, ClassNotFoundException {
+    public void readFileFromDisk(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException, CredentialException, NoAccessException, IOException, ClassNotFoundException {
         assert repInv();
         if(!userAuth(Id,passw)) throw new CredentialException("valid users' credentials are required !");
         if(file == null) throw new NullPointerException("file must be != null !");
@@ -481,6 +487,66 @@ public class MapSecureDataContainer<E extends SecureFile> implements ISecureFile
             if(u.getId().equals(Id) && u.auth(passw)) return true;
         }
         return false;
+    }
+
+    /*
+    Memorizza this nel documento su disco relativo
+    @requires Id != null && passw != null && !Id.isEmpty() && !passw.isEmpty() &&
+              (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && id = admin.id)
+    @throws NullPointerException se Id = null || passw = null || file = null
+    @throws IllegalArgumentException se Id.isEmpty() || passw.isEmpty()
+    @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Id && u.password = passw && id = admin.id)
+    @throws IOException se si verifica un problema durante la scrittura su file
+    @modifies this
+    @effects scrivi contenuto di this nel documento su disco relativo
+     */
+    public void writeContainerOnDisk(String Id, String passw) throws NullPointerException, IllegalArgumentException, CredentialException, IOException{
+        assert repInv();
+        if(!userAuth(Id,passw)) throw new CredentialException("valid users' credentials are required !");
+        if(!admin.equals(Id)) throw new CredentialException("user " + Id + " is not an admin");
+        // Serialization
+
+        FileOutputStream f = new FileOutputStream(getFilePath()); //doc sul quale effettuare la scrittura
+        ObjectOutputStream out = new ObjectOutputStream(f);
+
+        out.writeObject(this); //memorizzo contenuto del container su disco
+
+        out.close();
+        f.close();
+        assert repInv();
+    }
+
+    /*
+    Inizializza this con ciò che viene letto dal documento su disco relativo
+    @requires Id != null && passw != null && !Id.isEmpty() && !passw.isEmpty() &&
+              (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && id = admin.id)
+    @throws NullPointerException se Id = null || passw = null || file = null
+    @throws IllegalArgumentException se Id.isEmpty() || passw.isEmpty()
+    @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Id && u.password = passw && id = admin.id)
+    @throws IOException se si verifica un problema durante la scrittura su file
+    @modifies this
+    @effects inizializza this con ciò che viene letto dal documento su disco relativo
+     */
+    public void readContainerFromDisk(String Id, String passw) throws NullPointerException, IllegalArgumentException, CredentialException, IOException, ClassNotFoundException {
+        assert repInv();
+        if(!userAuth(Id,passw)) throw new CredentialException("valid users' credentials are required !");
+        if(!admin.equals(Id)) throw new CredentialException("user " + Id + " is not an admin");
+        // Deserialization
+
+        FileInputStream f = new FileInputStream(getFilePath()); //doc sul quale effettuare la lettura
+        ObjectInputStream in = new ObjectInputStream(f);
+
+        MapSecureDataContainer<E> newContainer = (MapSecureDataContainer<E>) in.readObject();
+        //Aggiorno variabili di istanza
+        this.admin = newContainer.admin;
+        this.users = newContainer.users;
+        this.dataSet = newContainer.dataSet;
+        this.accesses = newContainer.accesses;
+
+        in.close();
+        f.close();
+
+        assert repInv();
     }
 
     private User getUser(String Id){
