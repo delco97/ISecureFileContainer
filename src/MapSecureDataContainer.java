@@ -14,7 +14,7 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
      IR:
         users != null && dataSet!= null && owners != null && accesses != null &&
         owners.keySet = dataSet && accesses.keySet = dataSet &&
-        owners.values sottoinsieme di users &&
+        owners.values sottoinsieme di users && admin != null && admin.hasPassword() && users.contains(admin)
         For all map. map in accesses.values => map.keySet sottoinsieme di users
      */
 
@@ -31,6 +31,7 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
     private Set<E> dataSet;  //Dati presenti nel container
     private Map<E,User> owners; //Proprietario associato a ciascun dato presente nel container
     private Map<E,Map<User,AccessLevel>> accesses; //Livello di accesso ad ogni dato presente nel container asseganto a ogni utente nel container
+
 
     /*
     Inizializza container vuoto.
@@ -54,7 +55,7 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
     private boolean repInv(){
         boolean ir;
         ir = users != null && dataSet != null && owners != null && accesses != null &&
-             owners.keySet().equals(dataSet) && accesses.keySet().equals(dataSet) && admin != null &&
+             owners.keySet().equals(dataSet) && accesses.keySet().equals(dataSet) && admin != null && admin.hasPassword() &&
              users.contains(admin) && users.containsAll(owners.values());
         if(ir) {
             //For all map. map in accesses.values => map.keySet sottoinsieme di users
