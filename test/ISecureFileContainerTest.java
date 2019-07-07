@@ -72,11 +72,11 @@ class ISecureFileContainerTest {
     static void createContainer(int p_implementation){
         switch ( p_implementation){
             case 1:
-                data = new MapSecureDataContainer<Exam_SecureWrap>(testFolderPath + "/container_dump.ser");
+                data = new MapSecureDataContainer<Exam_SecureWrap>(testFolderPath + "/container1_dump.ser");
                 break;
             case 2:
                 //TODO: crea nuova implementazione
-                data = null;
+                data = new ListSecureDataContainer<Exam_SecureWrap>(testFolderPath + "/container2_dump.ser");
                 break;
             default:
                 throw new IllegalArgumentException(p_implementation + "doesn't identify an implementation");
