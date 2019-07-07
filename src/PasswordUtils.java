@@ -17,6 +17,7 @@ public class PasswordUtils {
     private static final int ITERATIONS = 65536;
     private static final int KEY_LENGTH = 512;
     private static final String ALGORITHM = "PBKDF2WithHmacSHA512";
+    private static final String salt = PasswordUtils.generateSalt();
 
     /**
      * Genera una stringa casuale
@@ -49,7 +50,7 @@ public class PasswordUtils {
      * @return Restituisce la stringa hash associata a password se nessun errore si verifica durante la sua generazione
      *         altrimenti restituisce null.
      */
-    public static String hashPassword (String password, String salt) throws IllegalArgumentException{
+    public static String hashPassword (String password) throws IllegalArgumentException{
         if (password == null) throw new IllegalArgumentException("password must be != null");
         if (salt == null) throw new IllegalArgumentException("salt must be != null");
 
@@ -73,17 +74,17 @@ public class PasswordUtils {
     }
 
     /**
-     * Verifica se l'hash di password utilizzando salt è uguale a key
+     * Verifica se l'hash di password è uguale a key
      * @requires password != null && key != null && salt != null
      * @throws IllegalArgumentException se password = null || key = null || salt = null
      * @return true se l'hash di password coincide con la stringa key
      */
-    public static boolean verifyPassword (String password, String key, String salt) throws IllegalArgumentException{
+    public static boolean verifyPassword (String password, String key) throws IllegalArgumentException{
         if (password == null) throw new IllegalArgumentException("password must be != null");
         if (key == null) throw new IllegalArgumentException("key must be != null");
         if (salt == null) throw new IllegalArgumentException("salt must be != null");
 
-        String optEncrypted = hashPassword(password, salt);
+        String optEncrypted = hashPassword(password);
         if (optEncrypted == null) return false;
         return optEncrypted.equals(key);
     }

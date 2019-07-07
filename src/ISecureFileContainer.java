@@ -1,6 +1,4 @@
-import javax.security.auth.login.CredentialException;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.Iterator;
 
 public interface ISecureFileContainer<E>  {
@@ -102,7 +100,7 @@ public interface ISecureFileContainer<E>  {
     @return restituisce una copia del file
     */
     E get(String Owner, String passw, E file) throws NullPointerException, IllegalArgumentException,
-                                                     CredentialException, NoAccessException;
+            CredentialException, NoAccessException;
 
     /*
     Rimuove il file nella collezione
@@ -141,12 +139,12 @@ public interface ISecureFileContainer<E>  {
     /*
     Condivide in lettura il file nella collezione con un altro utente
     se vengono rispettati i controlli di identità
-    @requires Owner != null && passw != null && Other!=null && !Owner.isEmpty() && !passw.isEmpty() && !Other.isEmpty()
+    @requires Owner != null && passw != null && Other!=null && Owner != Other && !Owner.isEmpty() && !passw.isEmpty() && !Other.isEmpty()
               && file != null &&
               (Exist u appartenente a U tale che u.id = Owner && u.password = passw && OwnedData(u) contiene file) &&
               (Exist u appartenente a U tale che u.id = Other)
     @throws NullPointerException se Owner = null || passw = null || Other = null || file = null
-    @throws IllegalArgumentException se Owner.isEmpty() || passw.isEmpty() || Other.isEmpty()
+    @throws IllegalArgumentException se Owner.isEmpty() || passw.isEmpty() || Other.isEmpty() || Owner = Other
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Owner && u.password = passw)
     @throws UnknownUserException Not (Exist u appartenente a U tale che u.id = Other)
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Owner && u.password = passw) &&
@@ -161,12 +159,12 @@ public interface ISecureFileContainer<E>  {
     /*
     Condivide in lettura e scrittura il file nella collezione con un altro utente
     se vengono rispettati i controlli di identità
-    @requires Owner != null && passw != null && Other!=null && !Owner.isEmpty() && !passw.isEmpty() && !Other.isEmpty()
+    @requires Owner != null && passw != null && Other!=null && Owner != Other && !Owner.isEmpty() && !passw.isEmpty() && !Other.isEmpty()
               && file != null &&
               (Exist u appartenente a U tale che u.id = Owner && u.password = passw && OwnedData(u) contiene file) &&
               (Exist u appartenente a U tale che u.id = Other)
     @throws NullPointerException se Owner = null || passw = null || Other = null || file = null
-    @throws IllegalArgumentException se Owner.isEmpty() || passw.isEmpty() || Other.isEmpty()
+    @throws IllegalArgumentException se Owner.isEmpty() || passw.isEmpty() || Other.isEmpty() || Owner = Other
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Owner && u.password = passw)
     @throws UnknownUserException Not (Exist u appartenente a U tale che u.id = Other)
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Owner && u.password = passw) &&
@@ -208,7 +206,7 @@ public interface ISecureFileContainer<E>  {
     void removeUser(String Id, String passw) throws NullPointerException, IllegalArgumentException, CredentialException;
 
     /*
-    Memorizza file nel file relativo
+    Memorizza file nel documento su disco relativo
     @requires Id != null && passw != null && !Id.isEmpty() && !passw.isEmpty() && file != null &&
               (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && d = file && Access(u,d) = w)
     @throws NullPointerException se Id = null || passw = null || file = null
@@ -216,15 +214,14 @@ public interface ISecureFileContainer<E>  {
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Id && u.password = passw)
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Id && u.password = passw) &&
             Not (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && d = file && Access(u,d) = w)
-    @throws IOException se si verifica un problema durante la scrittura su file
-    @modifies this, file
-    @effects scrivi contenuto di file nel file associato
+    @effects scrivi contenuto di file nel documento su disco relativo
+    @return restitusice true se la scrittura è andata a buon fine; false altrimenti
      */
-    void writeFileOnDisk(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException,
-                                                           CredentialException, NoAccessException, IOException;
+    boolean writeFileOnDisk(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException,
+                                                           CredentialException, NoAccessException;
 
     /*
-    Leggi file dal file relativo
+    Leggi file dal documento su disco relativo
     @requires Id != null && passw != null && !Id.isEmpty() && !passw.isEmpty() && file != null &&
               (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && d = file && Access(u,d) = w)
     @throws NullPointerException se Id = null || passw = null || file = null
@@ -232,12 +229,37 @@ public interface ISecureFileContainer<E>  {
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Id && u.password = passw)
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Id && u.password = passw) &&
             Not (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && d = file && Access(u,d) = w)
-    @throws IOException se si verifica un problema durante la scrittura su file
-    @modifies this, file
-    @effects recupera contenuto di file da file associato
+    @modifies this
+    @effects recupera contenuto di file da documento su disco relativo
     */
-    void readFileFromDisk(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException,
-            CredentialException, NoAccessException, IOException, ClassNotFoundException;
+    boolean readFileFromDisk(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException,
+            CredentialException, NoAccessException;
+
+    /*
+    Inizializza this con ciò che viene letto dal documento su disco relativo
+    @requires Id != null && passw != null && !Id.isEmpty() && !passw.isEmpty() &&
+              (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && id = admin.id)
+    @throws NullPointerException se Id = null || passw = null || file = null
+    @throws IllegalArgumentException se Id.isEmpty() || passw.isEmpty()
+    @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Id && u.password = passw && id = admin.id)
+    @throws IOException se si verifica un problema durante la scrittura su file
+    @modifies this
+    @effects inizializza this con ciò che viene letto dal documento su disco relativo
+    @return restituisce true se la lettura ha successo; false altrimenti
+     */
+    boolean readContainerFromDisk(String Id, String passw) throws NullPointerException, IllegalArgumentException, CredentialException;
+
+    /*
+    Memorizza this nel documento su disco relativo
+    @requires Id != null && passw != null && !Id.isEmpty() && !passw.isEmpty() &&
+              (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && id = admin.id)
+    @throws NullPointerException se Id = null || passw = null || file = null
+    @throws IllegalArgumentException se Id.isEmpty() || passw.isEmpty()
+    @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Id && u.password = passw && id = admin.id)
+    @effects scrivi contenuto di this nel documento su disco relativo
+    @return restituisce true se this viene scritto correttamente su disco; false atrimenti
+     */
+    boolean writeContainerOnDisk(String Id, String passw) throws NullPointerException, IllegalArgumentException, CredentialException;
 
     /*
     Verifica se esiste un utente u con u.id = id

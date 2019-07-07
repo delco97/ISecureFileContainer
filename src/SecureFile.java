@@ -53,10 +53,7 @@ public class SecureFile implements Serializable{
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null ) return false;
-        if(o instanceof String) return filePath.equals(o);
-        if(getClass() != o.getClass()) return false;
+        if (this == o || o == null) return true;
         SecureFile that = (SecureFile) o;
         return filePath.equals(that.filePath);
     }
