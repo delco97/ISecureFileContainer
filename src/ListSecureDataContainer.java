@@ -18,7 +18,7 @@ public class ListSecureDataContainer<E extends SecureFile> extends SecureFile im
         owners sottoinsieme di users &&
         For all map. map in accesses => map.keySet sottoinsieme di users
      */
-    
+
     private User admin; //admin del container
     private Set<User> users; //Utenti presenti nel container
     private List<E> dataSet; //dati presenti nel container
