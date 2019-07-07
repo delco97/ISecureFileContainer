@@ -11,7 +11,9 @@ public class User implements Serializable {
 
     private String id; //id utente
     private String hash_pwd; //hash della password
-
+    //Perché è opportuno definire serialversionUID ?
+    // -> https://stackoverflow.com/questions/285793/what-is-a-serialversionuid-and-why-should-i-use-it
+    private static final long serialversionUID = 30L;
     /*
      * Crea un nuovo utente con password
      * @requires p_id != null && p_pwd != null && !p_id.isEmpty() && !p_pwd.isEmpty()
