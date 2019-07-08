@@ -1,4 +1,3 @@
-import java.io.IOException;
 import java.util.Iterator;
 
 public interface ISecureFileContainer<E>  {
@@ -194,10 +193,10 @@ public interface ISecureFileContainer<E>  {
 
     /*
      Rimuove l’utente dalla collezione
-     @requires Id != null && passw != null && !Id.isEmpty() && !passw.isEmpty() &&
+     @requires Id != null && passw != null && !Id.isEmpty() && !passw.isEmpty() && !Id.equals(admin.id)
                (Exist u appartenente a U tale che u.id = Id && u.password = passw)
      @throws NullPointerException se Id = null || passw = null
-     @throws IllegalArgumentException se Id.isEmpty() || passw.isEmpty()
+     @throws IllegalArgumentException se Id.isEmpty() || passw.isEmpty() || Id.equals(admin.id)
      @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Id && u.password = passw)
      @modifies this
      @effects u = {Id,passw} && this_post.U = this_pre.U - u &&

@@ -1,17 +1,17 @@
 import org.junit.jupiter.api.BeforeAll;
-        import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-        import javax.swing.filechooser.FileSystemView;
-        import java.io.File;
-        import java.io.FileNotFoundException;
-        import java.io.IOException;
-        import java.nio.file.Path;
-        import java.nio.file.Paths;
-        import java.util.*;
-        import org.junit.jupiter.params.ParameterizedTest;
-        import org.junit.jupiter.params.provider.ValueSource;
+import javax.swing.filechooser.FileSystemView;
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
-        import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 class Exam_SecureWrap extends SecureFile{
     public String name;
@@ -58,7 +58,7 @@ class ISecureFileContainerTest {
     static void init(){
         System.out.println("Preparazione pre-test");
         //Cancello cartella di test se presente
-        Path testFolder = Paths.get(FileSystemView.getFileSystemView()
+        testFolder = Paths.get(FileSystemView.getFileSystemView()
                         .getHomeDirectory()
                         .getAbsolutePath(),
                 "Desktop/SecureFileContainer_test"); //path cartella di test
@@ -72,19 +72,26 @@ class ISecureFileContainerTest {
     static void createContainer(int p_implementation){
         switch ( p_implementation){
             case 1:
-                data = new MapSecureDataContainer<Exam_SecureWrap>(testFolderPath + "/container1_dump.ser");
+                data = new MapSecureDataContainer<>(testFolderPath + "/container1_dump.ser");
                 break;
             case 2:
                 //TODO: crea nuova implementazione
-                data = new ListSecureDataContainer<Exam_SecureWrap>(testFolderPath + "/container2_dump.ser");
+                data = new ListSecureDataContainer<>(testFolderPath + "/container2_dump.ser");
                 break;
             default:
                 throw new IllegalArgumentException(p_implementation + "doesn't identify an implementation");
         }
     }
 
+    @BeforeEach
+    void cleanTestFolder() {
+        deleteFolder(testFolder.toFile()); //cancella cartella precedente, se presente
+        assertTrue(testFolder.toFile().mkdirs(), "Il test non può essere effettuato_" +
+                " se non è possibile creare la cartella di test: " + testFolder); //Crea nuova cartella di test
+    }
+
     @ParameterizedTest
-    @ValueSource(ints = {1})
+    @ValueSource(ints = {1, 2})
     void createUser(int p_implementation) {
         createContainer(p_implementation);
 
@@ -102,7 +109,7 @@ class ISecureFileContainerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1})
+    @ValueSource(ints = {1, 2})
     void removeUser(int p_implementation) {
         createContainer(p_implementation);
 
@@ -112,6 +119,7 @@ class ISecureFileContainerTest {
         assertThrows(IllegalArgumentException.class,() ->  data.removeUser("", "asd"));
         assertThrows(IllegalArgumentException.class,() ->  data.removeUser("asd", ""));
         assertThrows(IllegalArgumentException.class,() ->  data.removeUser("", ""));
+        assertThrows(IllegalArgumentException.class, () -> data.removeUser("Luca", "Diavolo!"));
 
         data.createUser("Mario","pwd");
         data.createUser("mario","pwd");
@@ -121,7 +129,7 @@ class ISecureFileContainerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1})
+    @ValueSource(ints = {1, 2})
     void getSize(int p_implementation) {
         createContainer(p_implementation);
 
@@ -146,7 +154,7 @@ class ISecureFileContainerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1})
+    @ValueSource(ints = {1, 2})
     void put(int p_implementation) {
         createContainer(p_implementation);
 
@@ -168,7 +176,7 @@ class ISecureFileContainerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1})
+    @ValueSource(ints = {1, 2})
     void get(int p_implementation) {
         createContainer(p_implementation);
 
@@ -202,7 +210,7 @@ class ISecureFileContainerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1})
+    @ValueSource(ints = {1, 2})
     void remove(int p_implementation) {
         createContainer(p_implementation);
 
@@ -241,7 +249,7 @@ class ISecureFileContainerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1})
+    @ValueSource(ints = {1, 2})
     void copy(int p_implementation) {
         createContainer(p_implementation);
         data.createUser("Mario", "pwd");
@@ -282,7 +290,7 @@ class ISecureFileContainerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1})
+    @ValueSource(ints = {1, 2})
     void shareR(int p_implementation) {
         createContainer(p_implementation);
         data.createUser("Mario", "pwd");
@@ -324,7 +332,7 @@ class ISecureFileContainerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1})
+    @ValueSource(ints = {1, 2})
     void shareW(int p_implementation) {
         createContainer(p_implementation);
         data.createUser("Mario", "pwd");
@@ -368,7 +376,7 @@ class ISecureFileContainerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1})
+    @ValueSource(ints = {1, 2})
     void getIterator(int p_implementation) {
         createContainer(p_implementation);
 
@@ -404,7 +412,7 @@ class ISecureFileContainerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1})
+    @ValueSource(ints = {1, 2})
     void writeFileOnDisk(int p_implementation) {
         createContainer(p_implementation);
         data.createUser("Mario", "pwd");
@@ -439,7 +447,7 @@ class ISecureFileContainerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1})
+    @ValueSource(ints = {1, 2})
     void readFileFromDisk(int p_implementation) {
         createContainer(p_implementation);
         data.createUser("Mario", "pwd");
@@ -480,7 +488,7 @@ class ISecureFileContainerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1})
+    @ValueSource(ints = {1, 2})
     void writeContainerOnDisk(int p_implementation) {
         createContainer(p_implementation);
         data.createUser("Mario", "pwd");
@@ -510,7 +518,7 @@ class ISecureFileContainerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1})
+    @ValueSource(ints = {1, 2})
     void readContainerFromDisk(int p_implementation) {
         createContainer(p_implementation);
         data.createUser("Mario", "pwd");
@@ -541,7 +549,7 @@ class ISecureFileContainerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1})
+    @ValueSource(ints = {1, 2})
     void userExist(int p_implementation) {
         createContainer(p_implementation);
         data.createUser("Mario", "pwd");
@@ -558,7 +566,7 @@ class ISecureFileContainerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {1})
+    @ValueSource(ints = {1, 2})
     void userAuth(int p_implementation) {
         createContainer(p_implementation);
         data.createUser("Mario", "pwd");

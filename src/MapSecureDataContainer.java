@@ -35,8 +35,8 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
 
     /*
     Inizializza container vuoto.
-    Path rappresenta il documento nel quale l'intero container può essere memorizzato
-     */
+    p_filePath rappresenta il path assoluto nel quale l'intero container può essere memorizzato
+    */
     MapSecureDataContainer(String path) {
         super(path);
         users = new HashSet<>();
@@ -93,10 +93,10 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
 
     /*
      Rimuove l’utente dalla collezione
-     @requires Id != null && passw != null && !Id.isEmpty() && !passw.isEmpty() &&
+     @requires Id != null && passw != null && !Id.isEmpty() && !passw.isEmpty() && !Id.equals(admin.id)
                (Exist u appartenente a U tale che u.id = Id && u.password = passw)
      @throws NullPointerException se Id = null || passw = null
-     @throws IllegalArgumentException se Id.isEmpty() || passw.isEmpty()
+     @throws IllegalArgumentException se Id.isEmpty() || passw.isEmpty() || Id.equals(admin.id)
      @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Id && u.password = passw)
      @modifies this
      @effects u = {Id,passw} && this_post.U = this_pre.U - u &&
@@ -105,10 +105,10 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
     @Override
     public void removeUser(String Id, String passw) throws NullPointerException, IllegalArgumentException, CredentialException {
         assert repInv();
-
         if(!userAuth(Id,passw)) throw new CredentialException("valid users' credentials are required !");
+        if (Id.equals(admin.getId())) throw new IllegalArgumentException("admin user can't be removed !");
         //credenziali valide
-        assert users.remove(new User(Id)); //rimuovo utente da insime degli utenti presenti
+        users.remove(new User(Id)); //rimuovo utente da insime degli utenti presenti
         //L'insieme dei dati che prima appartenevano all'utente u con u.id = Id devono essere rimossi da
         // dataSet, owners e accesses
 
@@ -438,6 +438,7 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
         assert repInv();
         return true;
     }
+
     /*
     Leggi file dal documento su disco relativo
     @requires Id != null && passw != null && !Id.isEmpty() && !passw.isEmpty() && file != null &&
@@ -574,6 +575,7 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
             this.admin = newContainer.admin;
             this.users = newContainer.users;
             this.dataSet = newContainer.dataSet;
+            this.owners = newContainer.owners;
             this.accesses = newContainer.accesses;
 
             in.close();
