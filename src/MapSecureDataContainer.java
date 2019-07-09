@@ -373,6 +373,58 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
         assert repInv();
     }
 
+    private class UserFilesIterator implements Iterator<E> {
+        private E current; //elemento corrente
+        private User targetUser; //proprietario dei file
+        private Iterator<Map.Entry<E,User>> iterOwners; //iteratore di owners.entrySet
+
+        //Inizializza putatore al primo dato di cui è proprietario targetUser
+        UserFilesIterator(User p_targetUser){
+            targetUser = p_targetUser;
+            iterOwners = owners.entrySet().iterator();
+            current = getNext();
+        }
+
+        /*
+         * Restituisce il prossimo dato di targetUser. Se non ce ne sono altri ritorna null
+         * @modifies iterOwners
+         * @effect prosegue con l'iterazione di iterOwners (iterOwners.next) finché iterOwners.hasNext()
+         * @return il prossimo dato di targetUser; se non ce ne sono altri ritorna null
+         */
+        private E getNext(){
+            while (iterOwners.hasNext()) {
+                Map.Entry<E,User> entry = iterOwners.next();
+                if(entry.getValue().equals(targetUser)) {
+                    return entry.getKey();
+                }
+            }
+            return null;
+        }
+
+        /*
+         * Verifica se sono rimasti ancora dei dati da visitare
+         * @return ci sono ancora dati da visitare; false altrimenti
+         */
+        @Override
+        public boolean hasNext() {
+            return current == null;
+        }
+
+        /*
+         * Restituisce dato corrente di targetUser e aggiorna il puntatore.
+         * @modifies current
+         * @effect current = getNext()
+         * @return dato corrente di targetUser
+         */
+        @Override
+        public E next() {
+            E data = current;
+            current = getNext();
+            return  data;
+        }
+
+    }
+
     /*
     Restituisce un iteratore (senza remove) che genera tutti i file
     dell’utente in ordine arbitrario
@@ -388,18 +440,9 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
     public Iterator<E> getIterator(String Owner, String passw) throws NullPointerException, IllegalArgumentException, CredentialException {
         assert repInv();
         if(!userAuth(Owner,passw)) throw new CredentialException("valid users' credentials are required !");
-        //Recupero insieme dei dati posseduti da Owner
-        Set<E> res = new HashSet<>();
-        Iterator<Map.Entry<E,User>> iterOwners = owners.entrySet().iterator();
-        while (iterOwners.hasNext()) {
-            Map.Entry<E,User> entry = iterOwners.next();
-            if(entry.getValue().equals(new User(Owner))) {
-                res.add(entry.getKey());
-            }
-        }
-        assert repInv();
-        //Restituisco Iteratore senza remove di res
-        return new NoRemoveIterator<E>(res.iterator());
+
+        //Restituisco Iteratore senza remove dei file di cui Owner è proprietario
+        return new UserFilesIterator(new User(Owner));
     }
 
     /*

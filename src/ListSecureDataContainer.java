@@ -370,6 +370,47 @@ public class ListSecureDataContainer<E extends SecureFile> extends SecureFile im
         assert repInv();
     }
 
+    private class UserFilesIterator implements Iterator<E> {
+        private E current; //elemento corrente
+        private User targetUser; //proprietario dei file
+        private int currentTargetPos = -1; //Ultima posizione di targetUser in owners
+
+        //Inizializza putatore al primo dato di cui è proprietario targetUser
+        UserFilesIterator(User p_targetUser){
+            targetUser = p_targetUser;
+            currentTargetPos = ListSecureDataContainer.this.owners.indexOf(p_targetUser);
+            current = currentTargetPos == -1 ? null : ListSecureDataContainer.this.dataSet.get(currentTargetPos);
+        }
+
+        /*
+         * Verifica se sono rimasti ancora dei dati da visitare
+         * @return ci sono ancora dati da visitare; false altrimenti
+         */
+        @Override
+        public boolean hasNext() {
+            return current == null;
+        }
+
+        /*
+         * Restituisce dato corrente di targetUser e aggiorna il puntatore.
+         * @modifies current
+         * @effect current punta al successivo dato da visitare; se non ce ne sono altri current = null
+         * @return dato corrente di targetUser
+         */
+        @Override
+        public E next() {
+            E data = current;
+            //Recupero posizione (se possibile) di un altra occorrenza di targetUser nella lista dei proprietari rimanente
+            int newTargetPos = ListSecureDataContainer.this.owners.subList(currentTargetPos+1,owners.size()).indexOf(targetUser);
+            //Se non trovo altre occorrenze nella lista rimanente significa che ho finito la visita; altrimenti assegno a currentTargetPos
+            //la posizione della nuova occorrenza trovata nella lista rimanente.
+            currentTargetPos = newTargetPos == -1 ? -1 : currentTargetPos + 1 + newTargetPos;
+            current = currentTargetPos == -1 ? null : ListSecureDataContainer.this.dataSet.get(currentTargetPos);
+            return  data;
+        }
+
+    }
+
     /*
     Restituisce un iteratore (senza remove) che genera tutti i file
     dell’utente in ordine arbitrario
@@ -385,16 +426,8 @@ public class ListSecureDataContainer<E extends SecureFile> extends SecureFile im
     public Iterator<E> getIterator(String Owner, String passw) throws NullPointerException, IllegalArgumentException, CredentialException {
         assert repInv();
         if (!userAuth(Owner, passw)) throw new CredentialException("valid users' credentials are required !");
-        //Recupero insieme dei dati posseduti da Owner
-        User targetUser = new User(Owner);
-        final Set<E> targetData = new HashSet<>();
-        for (int i = 0; i < dataSet.size(); i++) {
-            if (owners.get(i).equals(targetUser)) targetData.add(dataSet.get(i));
-        }
-
-        assert repInv();
-        //Restituisco Iteratore senza remove di res
-        return new NoRemoveIterator<E>(targetData.iterator());
+        //Restituisco Iteratore senza remove dei file di cui Owner è il proprietario
+        return new UserFilesIterator(new User(Owner));
     }
 
     /*

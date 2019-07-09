@@ -13,7 +13,7 @@ public class SecureFile implements Serializable{
     //Perché è opportuno definire serialversionUID ?
     // -> https://stackoverflow.com/questions/285793/what-is-a-serialversionuid-and-why-should-i-use-it
     private static final long serialversionUID = 20L;
-    private String filePath;
+    private String filePath; //file path assoluto del file sul quale this può essere scritto/letto
 
     /*
     Costruttore
@@ -24,21 +24,14 @@ public class SecureFile implements Serializable{
     SecureFile(String p_filePath) throws NullPointerException, IllegalArgumentException{
         setFilePath(p_filePath);
     }
-    /*
-    Costruttore di copia
-    @requires p_sFile.p_filePath != null && !p_sFile.p_filePath.isEmpty()
-    @throws NullPointerException se p_sFile == null
-    @throws IllegalArgumentException se p_filePath.isEmpty()
-     */
-    SecureFile(SecureFile p_sFile) throws NullPointerException, IllegalArgumentException{
-        this(p_sFile.getFilePath());
-    }
 
     /*
     Modifica filePath
     @requires p_filePath != null && !p_filePath.isEmpty()
     @throws NullPointerException se p_filePath == null
     @throws IllegalArgumentException se p_filePath.isEmpty()
+    @modifies this
+    @effect Modifica filePath
      */
     private void setFilePath(String p_filePath)throws NullPointerException, IllegalArgumentException{
         if(p_filePath == null) throw new NullPointerException("p_filePath must be != null !");
@@ -47,19 +40,36 @@ public class SecureFile implements Serializable{
         this.filePath = p_filePath;
     }
 
+    /*
+    Restituisce filePath
+    @effect Restituisce filePath
+     */
     public String getFilePath() {
         return filePath;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o || o == null) return true;
-        SecureFile that = (SecureFile) o;
-        return filePath.equals(that.filePath);
+        if (this == o) return true;
+        if (o == null) return false;
+        try {
+            SecureFile that = (SecureFile) o;
+            return filePath.equals(that.filePath);
+        }catch (ClassCastException e){
+            return false;
+        }
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(filePath);
     }
+
+//    @Override
+//    public boolean equals(Object o) {
+//        if (this == o || o == null) return true;
+//        SecureFile that = (SecureFile) o;
+//        return filePath.equals(that.filePath);
+//    }
+
 }
