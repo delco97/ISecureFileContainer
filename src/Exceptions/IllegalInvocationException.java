@@ -1,14 +1,14 @@
 public class IllegalInvocationException extends RuntimeException {
 
     /**
-     * Costruttore per CredentialException senza dettagli.
+     * Costruttore per IllegalInvocationException senza dettagli.
      */
     public IllegalInvocationException() {
         super();
     }
 
     /**
-     * Costruttore per CredentialException con dettagli.
+     * Costruttore per IllegalInvocationException con dettagli.
      */
     public IllegalInvocationException(String msg) {
         super(msg);
