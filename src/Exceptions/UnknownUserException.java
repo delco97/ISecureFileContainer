@@ -1,3 +1,5 @@
+package Exceptions;
+
 public class UnknownUserException extends RuntimeException{
     /**
      * Costruttore per UnknownUserException senza dettagli.

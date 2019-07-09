@@ -1,3 +1,8 @@
+import Exceptions.CredentialException;
+import Exceptions.DuplicatedUserException;
+import Exceptions.NoAccessException;
+import Exceptions.UnknownUserException;
+
 import java.io.*;
 import java.util.*;
 

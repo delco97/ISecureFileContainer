@@ -1,3 +1,8 @@
+import Exceptions.CredentialException;
+import Exceptions.DuplicatedUserException;
+import Exceptions.NoAccessException;
+import Exceptions.UnknownUserException;
+
 import java.util.Iterator;
 
 public interface ISecureFileContainer<E>  {
@@ -54,7 +59,7 @@ public interface ISecureFileContainer<E>  {
     @effects u = {Id,passw} && this_post.U = this_pre.U + u
     */
     void createUser(String Id, String passw) throws NullPointerException, IllegalArgumentException,
-                                                    DuplicatedUserException;
+            DuplicatedUserException;
 
     /*
     Restituisce il numero dei file di un utente presenti nella

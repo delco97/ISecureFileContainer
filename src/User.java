@@ -1,4 +1,4 @@
-import com.sun.jdi.InvocationException;
+import Exceptions.IllegalInvocationException;
 
 import java.io.Serializable;
 import java.util.Objects;

@@ -1,3 +1,5 @@
+package Exceptions;
+
 public class NoAccessException extends RuntimeException {
     /**
      * Costruttore per NoAccessException senza dettagli.

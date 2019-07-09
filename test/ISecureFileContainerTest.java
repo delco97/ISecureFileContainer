@@ -1,3 +1,7 @@
+import Exceptions.CredentialException;
+import Exceptions.DuplicatedUserException;
+import Exceptions.NoAccessException;
+import Exceptions.UnknownUserException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
