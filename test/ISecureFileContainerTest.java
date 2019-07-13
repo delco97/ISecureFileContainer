@@ -63,7 +63,6 @@ class ISecureFileContainerTest {
                 data = new MapSecureDataContainer<>(testFolderPath + "/container1_dump.ser");
                 break;
             case 2:
-                //TODO: crea nuova implementazione
                 data = new ListSecureDataContainer<>(testFolderPath + "/container2_dump.ser");
                 break;
             default:
