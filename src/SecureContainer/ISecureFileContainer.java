@@ -1,7 +1,9 @@
-import Exceptions.CredentialException;
-import Exceptions.DuplicatedUserException;
-import Exceptions.NoAccessException;
-import Exceptions.UnknownUserException;
+package SecureContainer;
+
+import SecureContainer.Exceptions.CredentialException;
+import SecureContainer.Exceptions.DuplicatedUserException;
+import SecureContainer.Exceptions.NoAccessException;
+import SecureContainer.Exceptions.UnknownUserException;
 
 import java.io.IOException;
 import java.util.Iterator;

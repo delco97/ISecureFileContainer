@@ -1,4 +1,4 @@
-package Exceptions;
+package SecureContainer.Exceptions;
 
 public class NoAccessException extends RuntimeException {
     /**

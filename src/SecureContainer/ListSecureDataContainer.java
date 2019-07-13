@@ -1,7 +1,9 @@
-import Exceptions.CredentialException;
-import Exceptions.DuplicatedUserException;
-import Exceptions.NoAccessException;
-import Exceptions.UnknownUserException;
+package SecureContainer;
+
+import SecureContainer.Exceptions.CredentialException;
+import SecureContainer.Exceptions.DuplicatedUserException;
+import SecureContainer.Exceptions.NoAccessException;
+import SecureContainer.Exceptions.UnknownUserException;
 
 import java.io.*;
 import java.util.*;
@@ -35,7 +37,7 @@ public class ListSecureDataContainer<E extends SecureFile> extends SecureFile im
     Inizializza container vuoto.
     p_filePath rappresenta il path assoluto nel quale l'intero container può essere memorizzato
     */
-    ListSecureDataContainer(String p_filePath) throws NullPointerException, IllegalArgumentException {
+    public ListSecureDataContainer(String p_filePath) throws NullPointerException, IllegalArgumentException {
         super(p_filePath);
         users = new HashSet<>();
         dataSet = new ArrayList<>();
@@ -295,8 +297,9 @@ public class ListSecureDataContainer<E extends SecureFile> extends SecureFile im
         if (filePos == -1) throw new IllegalArgumentException("file must be inside data collection!");
         if (!owners.get(filePos).equals(new User(Owner))) throw new NoAccessException("user " + Owner + " must be the Owner to copy file!");
         if (dataSet.contains(new SecureFile(newFilePath))) throw new IllegalArgumentException("newfilePath must be unique inside data collection!");
-
-        put(Owner, passw, (E) new SecureFile(newFilePath));
+        E copyFile = (E)deepCopy(file);
+        copyFile.setFilePath(newFilePath);
+        put(Owner, passw, copyFile);
 
         assert repInv();
     }

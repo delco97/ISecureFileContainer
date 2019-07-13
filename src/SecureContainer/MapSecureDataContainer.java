@@ -1,7 +1,9 @@
-import Exceptions.CredentialException;
-import Exceptions.DuplicatedUserException;
-import Exceptions.NoAccessException;
-import Exceptions.UnknownUserException;
+package SecureContainer;
+
+import SecureContainer.Exceptions.CredentialException;
+import SecureContainer.Exceptions.DuplicatedUserException;
+import SecureContainer.Exceptions.NoAccessException;
+import SecureContainer.Exceptions.UnknownUserException;
 
 import java.io.*;
 import java.util.*;
@@ -42,7 +44,7 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
     Inizializza container vuoto.
     p_filePath rappresenta il path assoluto nel quale l'intero container può essere memorizzato
     */
-    MapSecureDataContainer(String path) {
+    public MapSecureDataContainer(String path) {
         super(path);
         users = new HashSet<>();
         dataSet = new HashSet<>();
@@ -305,8 +307,9 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
         if(!dataSet.contains(file)) throw new IllegalArgumentException("file must be inside data collection!");
         if(!owners.get(file).equals(new User(Owner))) throw new NoAccessException("user " + Owner + " must be the Owner to copy file!");
         if(dataSet.contains(new SecureFile(newFilePath))) throw new IllegalArgumentException("newfilePath must be unique inside data collection!");
-
-        put(Owner,passw, (E) new SecureFile(newFilePath));
+        E copyFile = (E)deepCopy(file);
+        copyFile.setFilePath(newFilePath);
+        put(Owner,passw, copyFile);
 
         assert repInv();
     }

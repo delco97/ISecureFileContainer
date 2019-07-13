@@ -1,4 +1,6 @@
-import Exceptions.IllegalInvocationException;
+package SecureContainer;
+
+import SecureContainer.Exceptions.IllegalInvocationException;
 
 import java.io.Serializable;
 import java.util.Objects;

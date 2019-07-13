@@ -1,3 +1,5 @@
+package SecureContainer;
+
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -21,7 +23,7 @@ public class SecureFile implements Serializable{
     @throws NullPointerException se p_filePath == null
     @throws IllegalArgumentException se p_filePath.isEmpty()
      */
-    SecureFile(String p_filePath) throws NullPointerException, IllegalArgumentException{
+    public SecureFile(String p_filePath) throws NullPointerException, IllegalArgumentException{
         setFilePath(p_filePath);
     }
 
@@ -33,7 +35,7 @@ public class SecureFile implements Serializable{
     @modifies this
     @effect Modifica filePath
      */
-    private void setFilePath(String p_filePath)throws NullPointerException, IllegalArgumentException{
+    protected void setFilePath(String p_filePath)throws NullPointerException, IllegalArgumentException{
         if(p_filePath == null) throw new NullPointerException("p_filePath must be != null !");
         if(p_filePath.isEmpty()) throw new IllegalArgumentException("p_filePath can't be an empty string!");
         //TODO: Check if p_filePath is a valid file path

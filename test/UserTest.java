@@ -1,4 +1,5 @@
-import Exceptions.IllegalInvocationException;
+import SecureContainer.Exceptions.IllegalInvocationException;
+import SecureContainer.User;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

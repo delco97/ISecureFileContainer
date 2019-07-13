@@ -1,4 +1,6 @@
-class Exam_SecureWrap extends SecureFile{
+import SecureContainer.SecureFile;
+
+class Exam_SecureWrap extends SecureFile {
     public String name;
     public int grade;
 
