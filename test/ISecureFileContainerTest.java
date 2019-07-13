@@ -9,6 +9,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.swing.filechooser.FileSystemView;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
@@ -117,7 +118,7 @@ class ISecureFileContainerTest {
 
     @ParameterizedTest
     @ValueSource(ints = {1, 2})
-    void getSize(int p_implementation) {
+    void getSize(int p_implementation) throws IOException {
         createContainer(p_implementation);
 
         assertThrows(NullPointerException.class,() ->  data.getSize(null, "asd"));
@@ -142,7 +143,7 @@ class ISecureFileContainerTest {
 
     @ParameterizedTest
     @ValueSource(ints = {1, 2})
-    void put(int p_implementation) {
+    void put(int p_implementation) throws IOException, ClassNotFoundException {
         createContainer(p_implementation);
 
         assertThrows(NullPointerException.class,() ->  data.put(null, "asd", new Exam_SecureWrap(testFolderPath + "/exam1.ser","Analisi",30)));
@@ -156,15 +157,21 @@ class ISecureFileContainerTest {
         assertThrows(CredentialException.class,() ->  data.put("err", "pwd",new Exam_SecureWrap(testFolderPath + "/exam1.ser","Analisi",30)));
         assertEquals(0, data.getSize("Mario","pwd"));
         assertEquals(0, data.getSize("Luigi","pwd"));
-        assertTrue(data.put("Mario","pwd",new Exam_SecureWrap(testFolderPath + "/exam1.ser","Analisi",30)));
-        assertTrue(data.put("Mario","pwd",new Exam_SecureWrap(testFolderPath + "/exam2.ser","PR2",30)));
-        assertFalse(data.put("Mario","pwd",new Exam_SecureWrap(testFolderPath + "/exam1.ser","Analisi",30)));
-        assertFalse(data.put("Luigi","pwd",new Exam_SecureWrap(testFolderPath + "/exam1.ser","Analisi",30)));
+        Exam_SecureWrap analisi = new Exam_SecureWrap(testFolderPath + "/exam1.ser","Analisi",30);
+        Exam_SecureWrap pr2 = new Exam_SecureWrap(testFolderPath + "/exam2.ser","PR2",30);
+        assertTrue(data.put("Mario","pwd",analisi));
+        assertTrue(data.put("Mario","pwd",pr2));
+        assertFalse(data.put("Mario","pwd",analisi));
+        assertFalse(data.put("Luigi","pwd",analisi));
+        //Verifico che sia possibile modificare il dato appena inserito dall'esterno.
+        analisi.grade = 25;
+        data.writeFileOnDisk("Mario","pwd",analisi);
+        assertEquals(analisi.grade,data.get("Mario","pwd",analisi).grade);
     }
 
     @ParameterizedTest
     @ValueSource(ints = {1, 2})
-    void get(int p_implementation) {
+    void get(int p_implementation) throws IOException, ClassNotFoundException {
         createContainer(p_implementation);
 
         assertThrows(NullPointerException.class,() ->  data.get(null, "asd", new Exam_SecureWrap(testFolderPath + "/exam1.ser","Analisi",30)));
@@ -193,12 +200,13 @@ class ISecureFileContainerTest {
         data.shareW("Mario","pwd","Luigi",analisi);
         Exam_SecureWrap analisi_directCopy = data.get("Luigi","pwd",analisi);
         analisi_directCopy.grade = 20;
+        data.writeFileOnDisk("Luigi","pwd", analisi_directCopy); //Rendo effettiva la modifica
         assertEquals(analisi_directCopy.grade, data.get("Luigi", "pwd", analisi_directCopy).grade);
     }
 
     @ParameterizedTest
     @ValueSource(ints = {1, 2})
-    void remove(int p_implementation) {
+    void remove(int p_implementation) throws IOException {
         createContainer(p_implementation);
 
         data.createUser("Mario", "pwd");
@@ -237,7 +245,7 @@ class ISecureFileContainerTest {
 
     @ParameterizedTest
     @ValueSource(ints = {1, 2})
-    void copy(int p_implementation) {
+    void copy(int p_implementation) throws IOException, ClassNotFoundException {
         createContainer(p_implementation);
         data.createUser("Mario", "pwd");
         data.createUser("Luigi", "pwd");
@@ -278,7 +286,7 @@ class ISecureFileContainerTest {
 
     @ParameterizedTest
     @ValueSource(ints = {1, 2})
-    void shareR(int p_implementation) {
+    void shareR(int p_implementation) throws IOException, ClassNotFoundException {
         createContainer(p_implementation);
         data.createUser("Mario", "pwd");
         data.createUser("Luigi", "pwd");
@@ -314,13 +322,14 @@ class ISecureFileContainerTest {
 
         Exam_SecureWrap analisi_mario_directCopy = data.get("Mario","pwd",analisi_mario);
         analisi_mario_directCopy.grade = 20;
+        data.writeFileOnDisk("Mario","pwd",analisi_mario_directCopy); //Rendo effettiva la modifica
         assertEquals(analisi_mario_directCopy.grade,data.get("Luigi","pwd",analisi_mario).grade);
 
     }
 
     @ParameterizedTest
     @ValueSource(ints = {1, 2})
-    void shareW(int p_implementation) {
+    void shareW(int p_implementation) throws IOException, ClassNotFoundException {
         createContainer(p_implementation);
         data.createUser("Mario", "pwd");
         data.createUser("Luigi", "pwd");
@@ -354,17 +363,19 @@ class ISecureFileContainerTest {
         data.shareW("Mario", "pwd", "Luigi", analisi_mario);
         Exam_SecureWrap analisi_mario_fromLuigi = data.get("Luigi","pwd",analisi_mario);
         analisi_mario_fromLuigi.grade = 20;
+        data.writeFileOnDisk("Luigi","pwd", analisi_mario_fromLuigi); //Rendo effettiva la modifica
         assertEquals(20,data.get("Luigi","pwd",analisi_mario).grade);
 
-        Exam_SecureWrap analisi_mario_fromMario = data.get("Luigi","pwd",analisi_mario);
+        Exam_SecureWrap analisi_mario_fromMario = data.get("Mario","pwd",analisi_mario);
         analisi_mario_fromMario.grade = 19;
-        assertEquals(19,data.get("Luigi","pwd",analisi_mario_fromMario).grade);
+        data.writeFileOnDisk("Mario","pwd", analisi_mario_fromLuigi); //Rendo effettiva la modifica
+        assertEquals(19,data.get("Mario","pwd",analisi_mario_fromMario).grade);
 
     }
 
     @ParameterizedTest
     @ValueSource(ints = {1, 2})
-    void getIterator(int p_implementation) {
+    void getIterator(int p_implementation) throws IOException {
         createContainer(p_implementation);
 
         data.createUser("Mario", "pwd");
@@ -400,7 +411,7 @@ class ISecureFileContainerTest {
 
     @ParameterizedTest
     @ValueSource(ints = {1, 2})
-    void writeFileOnDisk(int p_implementation) {
+    void writeFileOnDisk(int p_implementation) throws IOException, ClassNotFoundException {
         createContainer(p_implementation);
         data.createUser("Mario", "pwd");
         data.createUser("Luigi", "pwd");
@@ -427,15 +438,15 @@ class ISecureFileContainerTest {
         assertThrows(NoAccessException.class,() ->  data.writeFileOnDisk("Luigi","pwd", analisi_mario));
 
         assertThrows(NoAccessException.class,() -> data.writeFileOnDisk("Luigi","pwd", analisi_mario));
-        assertTrue(data.writeFileOnDisk("Mario","pwd", analisi_mario));
+        data.writeFileOnDisk("Mario","pwd", analisi_mario);
         data.get("Mario","pwd",analisi_mario).grade = 10;
-        assertTrue(data.writeFileOnDisk("Mario","pwd", analisi_mario));
+        data.writeFileOnDisk("Mario","pwd", analisi_mario);
         assertEquals(10,data.get("Mario","pwd",analisi_mario).grade);
     }
 
     @ParameterizedTest
     @ValueSource(ints = {1, 2})
-    void readFileFromDisk(int p_implementation) {
+    void readFileFromDisk(int p_implementation) throws IOException, ClassNotFoundException {
         createContainer(p_implementation);
         data.createUser("Mario", "pwd");
         data.createUser("Luigi", "pwd");
@@ -460,23 +471,23 @@ class ISecureFileContainerTest {
         assertThrows(IllegalArgumentException.class,() ->  data.readFileFromDisk("","pwd", analisi_mario));
         assertThrows(IllegalArgumentException.class,() ->  data.readFileFromDisk("Mario","", analisi_mario));
         assertThrows(CredentialException.class,() ->  data.readFileFromDisk("Mario","pwd_err", analisi_mario));
-        assertFalse( data.readFileFromDisk("Luigi","pwd", analisi_mario));
+        data.readFileFromDisk("Luigi","pwd", analisi_mario);
 
         assertThrows(NoAccessException.class,() -> data.readFileFromDisk("Luigi","pwd", logica_mario));
-        assertFalse(data.readFileFromDisk("Luigi","pwd", analisi_mario));
-        assertFalse(data.readFileFromDisk("Luigi","pwd", pr2_mario));
-        assertTrue(data.writeFileOnDisk("Mario","pwd", analisi_mario));
-        assertTrue(data.writeFileOnDisk("Mario","pwd", pr2_mario));
-        assertTrue(data.readFileFromDisk("Luigi","pwd", analisi_mario));
-        assertTrue(data.readFileFromDisk("Luigi","pwd", pr2_mario));
+        data.readFileFromDisk("Luigi","pwd", analisi_mario);
+        data.readFileFromDisk("Luigi","pwd", pr2_mario);
+        data.writeFileOnDisk("Mario","pwd", analisi_mario);
+        data.writeFileOnDisk("Mario","pwd", pr2_mario);
+        data.readFileFromDisk("Luigi","pwd", analisi_mario);
+        data.readFileFromDisk("Luigi","pwd", pr2_mario);
 
-        assertTrue(data.readFileFromDisk("Mario","pwd", analisi_mario));
+        data.readFileFromDisk("Mario","pwd", analisi_mario);
         assertEquals(30,data.get("Mario","pwd",analisi_mario).grade);
     }
 
     @ParameterizedTest
     @ValueSource(ints = {1, 2})
-    void writeContainerOnDisk(int p_implementation) {
+    void writeContainerOnDisk(int p_implementation) throws IOException {
         createContainer(p_implementation);
         data.createUser("Mario", "pwd");
         data.createUser("Luigi", "pwd");
@@ -506,7 +517,7 @@ class ISecureFileContainerTest {
 
     @ParameterizedTest
     @ValueSource(ints = {1, 2})
-    void readContainerFromDisk(int p_implementation) {
+    void readContainerFromDisk(int p_implementation) throws IOException {
         createContainer(p_implementation);
         data.createUser("Mario", "pwd");
         data.createUser("Luigi", "pwd");

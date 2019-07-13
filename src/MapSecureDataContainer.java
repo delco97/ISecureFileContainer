@@ -168,13 +168,14 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
     @throws NullPointerException se Owner = null || passw = null || file = null
     @throws IllegalArgumentException se Owner.isEmpty() || passw.isEmpty()
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Owner && u.password = passw )
+    @throws IOException se si verifica un errore durante la scrittura su disco
     @modifies this
     @effects Dato u = {Id,passw} se OwnedData(u) non contiene elementi uguali a file allora file viene inserito in
              OwnedData(u); altrimenti file non viene inserito
     @return Dato u = {Id,passw} restituisce true se file viene inserito in OwnedData(u), false altrimenti.
     */
     @Override
-    public boolean put(String Owner, String passw, E file) throws NullPointerException, IllegalArgumentException, CredentialException {
+    public boolean put(String Owner, String passw, E file) throws NullPointerException, IllegalArgumentException, CredentialException, IOException {
         assert repInv();
         if(!userAuth(Owner,passw)) throw new CredentialException("valid users' credentials are required !");
         if(file == null) throw new NullPointerException("file must be != null !");
@@ -182,14 +183,22 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
         if(dataSet.contains(file)) return false;
         else{
 
-            file = (E)deepCopy(file);
+            //Decommentando la riga seguente si ottiene il seguente risultato: i dati inseriti in this non sono manipolabili dall'esterno.
+            //NOTA BENE: se il dato viene modificato e si vogliono rendere effettive le modifiche occorre utilizzare il metodo writeFileOnDisk
+            //file = (E) deepCopy(file);
             dataSet.add(file);
             User usr = new User(Owner,passw);
             Map<User,AccessLevel> mapAcc = new HashMap<>();
             mapAcc.put(usr,AccessLevel.W);
-
             owners.put(file,usr);
             accesses.put(file,mapAcc);
+            try {
+                writeFileOnDisk(Owner,passw,file); //scrivo oggetto su disco
+            }catch (Exception e){
+                remove(Owner,passw,file);
+                throw e;
+            };
+
         }
 
         assert repInv();
@@ -202,17 +211,18 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
     @requires Owner != null && passw != null && !Owner.isEmpty() && !passw.isEmpty() && file != null &&
               (Exist (u,d) appartenente a (D * U) tale che u.id = Id && u.password = passw &&
               (Access((u,d)) = w || Access((u,d)) = r) )
-    @throws NullPointerException se Id = null || passw = null || file = null
-    @throws IllegalArgumentException se Owner.isEmpty() || passw.isEmpty() || file non in D
+    @throws NullPointerException se Id = null || passw = null || file = null || file non in D
+    @throws IllegalArgumentException se Owner.isEmpty() || passw.isEmpty()
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Id && u.password = passw)
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Owner && u.password = passw) &&
                                  Not (Exist (u,d) appartenente a (D * U) tale che u.id = Id && u.password = passw &&
                                       (Access((u,d)) = w || Access((u,d)) = r) )
-    @return se file è presente restituisce una copia del file. La copia è una deep copy se l'utente ha accesso in sola lettura,
-            mentre se ha accesso in scrittura viene restituito direttamente l'oggetto presente all'interno di this
+    @throws IOException se si verifica un errore durante la lettura da disco
+    @throws ClassNotFoundException se si verifica un errore durante la deserializzazione
+    @return restituisce una copia del file se Access(u,d) = R; altrimenti se  Access(u,d) = W restituisce il dato stesso
     */
     @Override
-    public E get(String Owner, String passw, E file) throws NullPointerException, IllegalArgumentException, CredentialException, NoAccessException {
+    public E get(String Owner, String passw, E file) throws NullPointerException, IllegalArgumentException, CredentialException, NoAccessException, IOException, ClassNotFoundException {
         assert repInv();
         if(!userAuth(Owner,passw)) throw new CredentialException("valid users' credentials are required !");
         if(file == null) throw new NullPointerException("file must be != null !");
@@ -232,6 +242,9 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
 
         assert res != null;
         assert repInv();
+        //NOTA BENE: se l'utente ha accesso in scrittura al dato ottiene un riferimento diretto all'oggetto contenuto
+        //           in this. In questo modo le eventuali modfiche fatte dall'esterno si ripercuoteranno anche sul dato all'interno
+        //           di this. Sarà compito dell cliente decidere se salvare eventuali modifiche su disco utilizzando il metodo writeFileOnDisk
         return acc == AccessLevel.W ? res : (E) deepCopy(res);
     }
 
@@ -280,11 +293,12 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Owner && u.password = passw)
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Owner && u.password = passw) &&
             Not (Exist u appartenente a U tale che u.id = Owner && u.password = passw && OwnedData(u) contiene file)
+    @throws IOException se si verifica un errore durante la scrittura su disco
     @modifies this
-    @effects effettua una copia di file con nuovo file path
+    @effects effettua una copia di file
      */
     @Override
-    public void copy(String Owner, String passw, E file, String newFilePath) throws NullPointerException, IllegalArgumentException, CredentialException, NoAccessException {
+    public void copy(String Owner, String passw, E file, String newFilePath) throws NullPointerException, IllegalArgumentException, CredentialException, NoAccessException, IOException {
         assert repInv();
         if(!userAuth(Owner,passw)) throw new CredentialException("valid users' credentials are required !");
         if(file == null) throw new NullPointerException("file must be != null !");
@@ -454,37 +468,32 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Id && u.password = passw)
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Id && u.password = passw) &&
             Not (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && d = file && Access(u,d) = w)
+    @throws IOException se si verifica un errore durante la scrittura su disco
     @effects scrivi contenuto di file nel documento su disco relativo
     @return restitusice true se la scrittura è andata a buon fine; false altrimenti
      */
     @Override
-    public boolean writeFileOnDisk(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException, CredentialException, NoAccessException {
+    public void writeFileOnDisk(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException, CredentialException, NoAccessException, IOException {
         assert repInv();
         if(!userAuth(Id,passw)) throw new CredentialException("valid users' credentials are required !");
         if(file == null) throw new NullPointerException("file must be != null !");
         if(!dataSet.contains(file)) throw new IllegalArgumentException("file must be inside data collection!");
         if(!accesses.get(file).containsKey(new User(Id))) throw new NoAccessException("user " + Id + " has no access to file");
         if(accesses.get(file).get(new User(Id)) != AccessLevel.W) throw new NoAccessException("user " + Id + " must have write access to file!");
-        // Serialization
-        try {
-            //Salvo oggetto file nel documento su disco relativo
+        //Salvo oggetto file nel documento su disco relativo
 
-            E containerFile = getFile(file); //recupero file da container
-            FileOutputStream f = new FileOutputStream(containerFile.getFilePath());
-            ObjectOutputStream out = new ObjectOutputStream(f);
+        E containerFile = getFile(file); //recupero file da container
+        FileOutputStream f = new FileOutputStream(containerFile.getFilePath());
+        ObjectOutputStream out = new ObjectOutputStream(f);
 
-            out.writeObject(containerFile); //memorizzo contenuto di containerFile su disco
+        out.writeObject(containerFile); //memorizzo contenuto di containerFile su disco
 
-            out.close();
-            f.close();
+        out.close();
+        f.close();
 
-            System.out.println("Object has been serialized");
-        } catch(IOException ex) {
-            ex.printStackTrace();
-            return false;
-        }
+        System.out.println("Object has been serialized");
+
         assert repInv();
-        return true;
     }
 
     /*
@@ -496,11 +505,12 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Id && u.password = passw)
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Id && u.password = passw) &&
             Not (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && d = file && Access(u,d) = w)
+    @throws IOException se si verifica un errore durante la lettura su disco
     @modifies this
     @effects recupera contenuto di file da documento su disco relativo
     */
     @Override
-    public boolean readFileFromDisk(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException, CredentialException, NoAccessException {
+    public void readFileFromDisk(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException, CredentialException, NoAccessException, IOException, ClassNotFoundException {
         assert repInv();
         if(!userAuth(Id,passw)) throw new CredentialException("valid users' credentials are required !");
         if(file == null) throw new NullPointerException("file must be != null !");
@@ -508,27 +518,21 @@ public class MapSecureDataContainer<E extends SecureFile> extends SecureFile imp
         if(!accesses.get(file).containsKey(new User(Id))) throw new NoAccessException("user " + Id + " has no access to file");
 
         // Deserialization
-        try {
-            FileInputStream f = new FileInputStream(file.getFilePath());
-            ObjectInputStream in = new ObjectInputStream(f);
+        FileInputStream f = new FileInputStream(file.getFilePath());
+        ObjectInputStream in = new ObjectInputStream(f);
 
-            E newfile = (E) in.readObject();
-            //Rimuovo vecchio file da container e metto quello appena letto da documento
-            dataSet.remove(newfile);
-            dataSet.add(newfile);
+        E newfile = (E) in.readObject();
+        //Rimuovo vecchio file da container e metto quello appena letto da documento
+        dataSet.remove(newfile);
+        dataSet.add(newfile);
 
-            in.close();
-            f.close();
+        in.close();
+        f.close();
 
-            System.out.println("Object has been deserialized");
-        }
-        catch(IOException | ClassNotFoundException ex) {
-            ex.printStackTrace();
-            return false;
-        }
+        System.out.println("Object has been deserialized");
+
 
         assert repInv();
-        return true;
     }
 
     /*

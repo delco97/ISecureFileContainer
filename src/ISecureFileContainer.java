@@ -3,6 +3,7 @@ import Exceptions.DuplicatedUserException;
 import Exceptions.NoAccessException;
 import Exceptions.UnknownUserException;
 
+import java.io.IOException;
 import java.util.Iterator;
 
 public interface ISecureFileContainer<E>  {
@@ -81,13 +82,14 @@ public interface ISecureFileContainer<E>  {
     @throws NullPointerException se Owner = null || passw = null || file = null
     @throws IllegalArgumentException se Owner.isEmpty() || passw.isEmpty()
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Owner && u.password = passw )
+    @throws IOException se si verifica un errore durante la scrittura su disco
     @modifies this
     @effects Dato u = {Id,passw} se OwnedData(u) non contiene elementi uguali a file allora file viene inserito in
              OwnedData(u); altrimenti file non viene inserito
     @return Dato u = {Id,passw} restituisce true se file viene inserito in OwnedData(u), false altrimenti.
     */
     boolean put(String Owner, String passw, E file) throws NullPointerException, IllegalArgumentException,
-                                                           CredentialException;
+            CredentialException, IOException;
 
     /*
     Ottiene una copia del file nella collezione
@@ -101,10 +103,12 @@ public interface ISecureFileContainer<E>  {
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Owner && u.password = passw) &&
                                  Not (Exist (u,d) appartenente a (D * U) tale che u.id = Id && u.password = passw &&
                                       (Access((u,d)) = w || Access((u,d)) = r) )
-    @return restituisce una copia del file
+    @throws IOException se si verifica un errore durante la lettura da disco
+    @throws ClassNotFoundException se si verifica un errore durante la deserializzazione
+    @return restituisce una copia del file se Access(u,d) = R; altrimenti se  Access(u,d) = W restituisce il dato stesso
     */
     E get(String Owner, String passw, E file) throws NullPointerException, IllegalArgumentException,
-            CredentialException, NoAccessException;
+            CredentialException, NoAccessException, IOException, ClassNotFoundException;
 
     /*
     Rimuove il file nella collezione
@@ -134,11 +138,12 @@ public interface ISecureFileContainer<E>  {
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Owner && u.password = passw)
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Owner && u.password = passw) &&
             Not (Exist u appartenente a U tale che u.id = Owner && u.password = passw && OwnedData(u) contiene file)
+    @throws IOException se si verifica un errore durante la scrittura su disco
     @modifies this
     @effects effettua una copia di file
      */
     void copy(String Owner, String passw, E file, String newFilePath) throws NullPointerException, IllegalArgumentException,
-                                                         CredentialException, NoAccessException;
+            CredentialException, NoAccessException, IOException;
 
     /*
     Condivide in lettura il file nella collezione con un altro utente
@@ -218,11 +223,12 @@ public interface ISecureFileContainer<E>  {
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Id && u.password = passw)
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Id && u.password = passw) &&
             Not (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && d = file && Access(u,d) = w)
+    @throws IOException se si verifica un errore durante la scrittura su disco
     @effects scrivi contenuto di file nel documento su disco relativo
     @return restitusice true se la scrittura è andata a buon fine; false altrimenti
      */
-    boolean writeFileOnDisk(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException,
-                                                           CredentialException, NoAccessException;
+    void writeFileOnDisk(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException,
+                                                           CredentialException, NoAccessException, IOException;
 
     /*
     Leggi file dal documento su disco relativo
@@ -233,11 +239,12 @@ public interface ISecureFileContainer<E>  {
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Id && u.password = passw)
     @throws NoAccessException se (Exist u appartenente a U tale che u.id = Id && u.password = passw) &&
             Not (Exist (u,d) appartenente a U tale che u.id = Id && u.password = passw && d = file && Access(u,d) = w)
+    @throws IOException se si verifica un errore durante la lettura su disco
     @modifies this
     @effects recupera contenuto di file da documento su disco relativo
     */
-    boolean readFileFromDisk(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException,
-            CredentialException, NoAccessException;
+    void readFileFromDisk(String Id, String passw, E file) throws NullPointerException, IllegalArgumentException,
+            CredentialException, NoAccessException, IOException, ClassNotFoundException;
 
     /*
     Inizializza this con ciò che viene letto dal documento su disco relativo
@@ -247,6 +254,7 @@ public interface ISecureFileContainer<E>  {
     @throws IllegalArgumentException se Id.isEmpty() || passw.isEmpty()
     @throws CredentialException se Not (Exist u appartenente a U tale che u.id = Id && u.password = passw && id = admin.id)
     @throws IOException se si verifica un problema durante la scrittura su file
+    @throws ClassNotFoundException se si verifica un errore durante la deserializzazione
     @modifies this
     @effects inizializza this con ciò che viene letto dal documento su disco relativo
     @return restituisce true se la lettura ha successo; false altrimenti
