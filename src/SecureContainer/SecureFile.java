@@ -51,7 +51,7 @@ public class SecureFile implements Serializable{
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) return true;
         if (o == null) return false;
         try {
@@ -63,7 +63,7 @@ public class SecureFile implements Serializable{
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         return Objects.hash(filePath);
     }
 
