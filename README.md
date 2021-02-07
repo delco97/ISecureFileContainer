@@ -1,5 +1,5 @@
 # PROGRAMMAZIONE	II	 - A.A.	2018	– 19
-##Primo	Progetto-sessione	estiva-autunnale
+## Primo	Progetto-sessione	estiva-autunnale
 Il	progetto	ha	l’obiettivo	di	applicare	i	concetti	e	le	tecniche	di	programmazione	Object-Oriented	esaminate	
 durante	il	corso.	Lo	scopo	del	progetto	è	lo	sviluppo	di	un	componente	software	di	supporto	alla	gestione	di	
 insiemi di	file.	
